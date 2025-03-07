@@ -1,0 +1,50 @@
+[
+  {
+    "wasteType": "dsa",
+    "location": "asd",
+    "description": "ads",
+    "image": "/images/bcd1fdda76e44c55860c8f9c4f94deca"
+  },
+  {
+    "wasteType": "dsa",
+    "location": "asd",
+    "description": "ads",
+    "image": "/images/896c6514214d2da8a9f7b24477db3b8b"
+  },
+  {
+    "id": 1741382738349,
+    "wasteType": "asd",
+    "location": "asd",
+    "description": "asd",
+    "imageUrl": "http://localhost:5000/images/1741382738332.jpg",
+    "date": "2025-03-07T21:25:38.349Z"
+  },
+  {
+    "id": 1741382979303,
+    "wasteType": "asd",
+    "location": "Dogormora, Savar, Savar Subdistrict, Dhaka District, Dhaka Division, 1340, Bangladesh",
+    "description": "asd",
+    "imageUrl": "http://localhost:5000/images/1741382979298.jpg",
+    "date": "2025-03-07T21:29:39.303Z"
+  },
+  {
+    "id": 1741383318327,
+    "wasteType": "asd",
+    "location": "afs",
+    "description": "dasd",
+    "latitude": 23.8411343,
+    "longitude": 90.2637738,
+    "imageUrl": "http://localhost:5000/images/1741383318317.jpg",
+    "date": "2025-03-07T21:35:18.328Z"
+  },
+  {
+    "id": 1741383509773,
+    "wasteType": "asd",
+    "location": "asd",
+    "description": "asd",
+    "latitude": 23.8411343,
+    "longitude": 90.2637738,
+    "imageUrl": "http://localhost:5000/images/1741383509766.jpg",
+    "date": "2025-03-07T21:38:29.773Z"
+  }
+]

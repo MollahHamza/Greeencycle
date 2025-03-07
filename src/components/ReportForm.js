@@ -1,12 +1,13 @@
-import React, { useState } from 'react';
-import Airtable from 'airtable';
+import React, { useState } from "react";
 
 const ReportForm = () => {
-  const [wasteType, setWasteType] = useState('');
-  const [location, setLocation] = useState('');
-  const [description, setDescription] = useState('');
+  const [wasteType, setWasteType] = useState("");
+  const [location, setLocation] = useState("");
+  const [description, setDescription] = useState("");
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Handle image file selection
@@ -16,9 +17,27 @@ const ReportForm = () => {
       setImage(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImagePreview(reader.result); // Store base64 image preview
+        setImagePreview(reader.result);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Get user's current location
+  const getLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+        },
+        (error) => {
+          console.error("Error getting location:", error);
+          alert("Failed to get location. Please enable location services.");
+        }
+      );
+    } else {
+      alert("Geolocation is not supported by your browser.");
     }
   };
 
@@ -26,88 +45,53 @@ const ReportForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Ensure all fields are filled
-    if (!wasteType || !location || !description) {
-      alert('Please fill in all required fields');
+    if (!wasteType || !location || !description || !latitude || !longitude) {
+      alert("Please fill in all fields and allow location access.");
       return;
     }
 
     setIsSubmitting(true);
 
+    const formData = new FormData();
+    formData.append("wasteType", wasteType);
+    formData.append("location", location);
+    formData.append("description", description);
+    formData.append("latitude", latitude);
+    formData.append("longitude", longitude);
+    if (image) {
+      formData.append("image", image);
+    }
+
     try {
-      // Airtable credentials and base setup
-      const apiKey = process.env.REACT_APP_AIRTABLE_API_KEY;
-      const baseId = process.env.REACT_APP_AIRTABLE_BASE_ID;
-      const tableName = process.env.REACT_APP_AIRTABLE_TABLE_NAME;
+      const response = await fetch("http://localhost:5000/submit-report", {
+        method: "POST",
+        body: formData,
+      });
 
-      const base = new Airtable({ apiKey }).base(baseId);
-
-      // Prepare record without the image first
-      const recordData = {
-        WasteType: wasteType,
-        Location: location,
-        Description: description,
-      };
-
-      // If there's an image, prepare it for Airtable
-      if (image) {
-        // Convert the image to base64 for Airtable
-        const base64Image = await convertFileToBase64(image);
-        
-        // Add image attachment to record data following Airtable's format
-        recordData.Image = [
-          {
-            url: `data:${image.type};base64,${base64Image}`,
-            filename: image.name,
-            type: image.type
-          }
-        ];
+      if (response.ok) {
+        alert("Waste report submitted successfully.");
+        setWasteType("");
+        setLocation("");
+        setDescription("");
+        setLatitude(null);
+        setLongitude(null);
+        setImage(null);
+        setImagePreview("");
+      } else {
+        alert("Failed to submit report. Please try again.");
       }
-
-      // Create the record in Airtable
-      await base(tableName).create([
-        {
-          fields: recordData,
-        },
-      ]);
-
-      // Display success message
-      alert('Waste report submitted successfully.');
-      
-      // Reset form fields
-      setWasteType('');
-      setLocation('');
-      setDescription('');
-      setImage(null);
-      setImagePreview('');
     } catch (error) {
-      console.error('Error submitting report:', error);
-      alert('Failed to submit report. Please try again.');
+      console.error("Error submitting report:", error);
+      alert("Failed to submit report. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  // Helper function to convert file to base64
-  const convertFileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => {
-        // The result includes the data URI scheme (e.g., "data:image/jpeg;base64,"),
-        // which we need to strip off
-        const base64String = reader.result.split(',')[1];
-        resolve(base64String);
-      };
-      reader.onerror = (error) => reject(error);
-    });
   };
 
   return (
     <form onSubmit={handleSubmit} className="max-w-md mx-auto p-4 bg-white shadow-md rounded-lg">
       <h2 className="text-xl font-semibold mb-4">Report Waste</h2>
 
-      {/* Waste Type */}
       <label className="block mb-2">Waste Type</label>
       <input
         type="text"
@@ -117,7 +101,6 @@ const ReportForm = () => {
         required
       />
 
-      {/* Location */}
       <label className="block mb-2">Location</label>
       <input
         type="text"
@@ -127,7 +110,13 @@ const ReportForm = () => {
         required
       />
 
-      {/* Description */}
+      <button type="button" onClick={getLocation} className="w-full py-2 bg-blue-500 text-white rounded-md mb-4">
+        Get Current Location
+      </button>
+      {latitude && longitude && (
+        <p className="text-sm text-gray-600">Location: {latitude}, {longitude}</p>
+      )}
+
       <label className="block mb-2">Description</label>
       <textarea
         value={description}
@@ -136,7 +125,6 @@ const ReportForm = () => {
         required
       ></textarea>
 
-      {/* Image Upload */}
       <label className="block mb-2">Upload Image</label>
       <input
         type="file"
@@ -144,21 +132,19 @@ const ReportForm = () => {
         onChange={handleFileChange}
         className="w-full p-2 border border-gray-300 rounded-md mb-4"
       />
-      
-      {/* Image Preview */}
+
       {imagePreview && (
         <div className="image-preview mb-4">
           <img src={imagePreview} alt="Preview" className="w-full h-auto rounded-md" />
         </div>
       )}
 
-      {/* Submit Button */}
-      <button 
-        type="submit" 
+      <button
+        type="submit"
         className="w-full py-2 bg-green-500 text-white rounded-md"
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Submitting...' : 'Submit Report'}
+        {isSubmitting ? "Submitting..." : "Submit Report"}
       </button>
     </form>
   );
